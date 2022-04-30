@@ -1,0 +1,1 @@
+Attention Weighted Local Descriptors
