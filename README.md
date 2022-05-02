@@ -1,8 +1,8 @@
-# MTLDesc (Local features detection and description)
+# AWDesc (Local features detection and description)
 
 Local features detection and description; local descriptors.
 
-Implementation of "MTLDesc: Looking Wider to Describe Better " (AAAI 2022) and AWDesc.
+Implementation of "MTLDesc: Looking Wider to Describe Better " (AAAI 2022) and AWDesc (Under Review).
 
 To do：
 - [x] Evaluation code for MTLDesc
