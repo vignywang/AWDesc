@@ -1,0 +1,20 @@
+hpatches:
+    dataset_dir: hpatches_sequences/hpatches-sequences-release
+    resize: false
+    grayscale: false
+
+model:
+    name: MTLDesc
+    backbone: network.MTLDesc
+    detection_threshold: 0.9
+    nms_dist: 4
+    nms_radius: 4
+    border_remove: 4
+    weight_path: "../ckpt"
+    ckpt_name: mtl_mtldesc_0 #mtl_mtl_6 #scalepoint_evo_old #scalepoint_mulhead
+    weights_id: '29'
+
+keys: keypoints,descriptors,shape
+output_type: normal #benchmark normal
+
+

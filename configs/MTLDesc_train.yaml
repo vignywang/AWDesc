@@ -1,0 +1,34 @@
+name: mtl
+trainer: mtldesc_trainer.MTLDescTrainer
+
+model:
+    backbone: network.MTLDesc
+
+train:
+    adjust_lr: true
+    lr: 0.001
+    weight_decay: 0.0001
+    lr_mod: LambdaLR
+    batch_size: 12
+    epoch_num: 30
+    maintain_epoch: 0
+    decay_epoch: 30
+    log_freq: 100
+    num_workers: 8
+    validate_after: 1000
+
+    dataset: megadepth_train_dataset.MegaDepthTrainDataset
+    mega_image_dir: /data/Mega_train/image
+    mega_keypoint_dir: /data/Mega_train/keypoint
+    mega_despoint_dir: /data/Mega_train/despoint
+    height: 400
+    width: 400
+
+    T: 15
+    fix_grid_option: 400
+    fix_sample: false
+    rotation_option: none
+    do_augmentation: true
+    sydesp_type: nomal # random
+    point_loss_weight: 200
+    w_weight: 0.1
