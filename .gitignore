@@ -1,0 +1,17 @@
+.idea/
+magicpoint_ckpt/
+magicpoint_log/
+megpoint_ckpt/
+megpoint_log/
+superpoint_ckpt/
+superpoint_log/
+ckpt/
+log/
+
+# configs/
+
+__pycache__/
+data_utils/__pycache__/
+
+
+
