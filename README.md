@@ -1,7 +1,6 @@
 # AWDesc (Local features detection and description)
 
-Implementation of  "MTLDesc: Looking Wider to Describe Better ".(https://github.com/vignywang/MTLDesc)
-
+Implementation of  "MTLDesc: Looking Wider to Describe Better " (https://github.com/vignywang/MTLDesc).
 Implementation of Attention Weighted Local Descriptors (Under Review).
 
 To do：
