@@ -2,7 +2,7 @@
 
 Local features detection and description; local descriptors.
 
-Implementation of Attention Weighted Local Descriptors (Under Review) and "MTLDesc: Looking Wider to Describe Better " (AAAI 2022).
+Implementation of Attention Weighted Local Descriptors (Under Review).
 
 To do：
 - [x] Evaluation code for AWDesc
