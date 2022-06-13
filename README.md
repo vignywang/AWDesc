@@ -1,6 +1,6 @@
 # AWDesc (Local features detection and description)
 
-Local features detection and description; local descriptors.
+Implementation of  "MTLDesc: Looking Wider to Describe Better ".(https://github.com/vignywang/MTLDesc)
 
 Implementation of Attention Weighted Local Descriptors (Under Review).
 
@@ -44,7 +44,7 @@ run HPatches-Sequences-Matching-Benchmark.ipynb
 
 Download dataset: https://drive.google.com/file/d/1Uz0hVFPxWsE71V77kXZ973iY2GuXC20b/view?usp=sharing
 
-Set the dataset path in the configuration file configs/MTLDesc_train.yaml
+Set the dataset path in the configuration file configs/AWDesc_train.yaml
 
 ```
 mega_image_dir:  /data/Mega_train/image   #images
@@ -52,5 +52,5 @@ mega_keypoint_dir:  /data/Mega_train/keypoint #keypoints
 mega_despoint_dir:  /data/Mega_train/despoint #descriptor correspondence points
 ```
 ```
-python train.py --gpus 0 --configs configs/MTLDesc_train.yaml --indicator mtldesc_0
+python train.py --gpus 0 --configs configs/AWDesc_train.yaml --indicator awdesc_ac
 ```
