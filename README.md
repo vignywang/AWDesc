@@ -5,9 +5,8 @@ Local features detection and description; local descriptors.
 Implementation of Attention Weighted Local Descriptors (Under Review).
 
 To do：
-- [x] Evaluation code for AWDesc
-- [x] Trained model and Training dataset
-- [ ] Training code (After the paper is accepted.)
+- [x] Evaluation code and Trained model for AWDesc
+- [ ] Training code and a more detailed readme (Coming soon)
 
 
 # Requirement
