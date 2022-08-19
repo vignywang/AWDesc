@@ -6,7 +6,7 @@ Implementation of Attention Weighted Local Descriptors (Under Review).
 
 To do：
 - [x] Evaluation code and Trained model for AWDesc
-- [ ] Training code and a more detailed readme (Coming soon)
+- [ ] Training code and a more detailed readme (Coming soon after being accepted)
 
 
 # Requirement
