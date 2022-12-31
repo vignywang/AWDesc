@@ -4,6 +4,8 @@ Implementation of  "MTLDesc: Looking Wider to Describe Better " (https://github.
 
 Implementation of Attention Weighted Local Descriptors (Under Review).
 
+Unofficial Pytorch implementation of SuperPoint（comming soon）.
+
 To do：
 - [x] Evaluation code and Trained model for AWDesc
 - [ ] Training code and a more detailed readme (Coming soon after being accepted)
