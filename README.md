@@ -1,14 +1,12 @@
 # AWDesc (Local features detection and description)
 
-Implementation of  "MTLDesc: Looking Wider to Describe Better " (https://github.com/vignywang/MTLDesc).
-
 Implementation of Attention Weighted Local Descriptors (TPAMI2023).
 
 Unofficial Pytorch implementation of SuperPoint.
 
 To do：
 - [x] Evaluation code and Trained model for AWDesc
-- [ ] Training code and a more detailed readme (Coming soon after being accepted)
+- [ ] Training code and a more detailed readme (Coming soon)
 - [ ] Training code of SuperPoint 
 
 # Requirement
