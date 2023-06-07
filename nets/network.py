@@ -74,7 +74,7 @@ class MTLDesc(nn.Module):
         heatmap1 = self.heatmap1(c1)
         heatmap2 = self.heatmap2(c2)
         heatmap3 = self.heatmap3(c3)
-        heatmap4 = self.heatmap3(c4)
+        heatmap4 = self.heatmap4(c4)
         des_size = heatmap1.shape[2:]  # 1/4 HxW
         heatmap2 = f.interpolate(heatmap2, des_size, mode='bilinear')
         heatmap3 = f.interpolate(heatmap3, des_size, mode='bilinear')
