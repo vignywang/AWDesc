@@ -670,5 +670,199 @@ class BinaryDescriptorTripletTanhSigmoidLoss(object):
         return triplet_loss
 
 
+class PointHeatmapWeightedBCELoss(object):
+
+    def __init__(self, weight=200):
+        self.weight = weight
+
+    def __call__(self, heatmap_pred, heatmap_gt, heatmap_valid):
+        """只适用one-hot的情况
+        """
+        sigmoid_0 = torch.sigmoid(heatmap_pred)  # 预测为关键点的概率
+        sigmoid_1 = 1. - sigmoid_0  # 预测为非关键点的概率
+
+        module_factor_0 = self.weight * heatmap_gt
+        module_factor_1 = 1. * (1 - heatmap_gt)
+
+        unmasked_heatmap_loss = -(module_factor_0*torch.log(sigmoid_0+1e-4)+module_factor_1*torch.log(sigmoid_1+1e-4))
+        loss = self._compute_masked_loss(unmasked_heatmap_loss, heatmap_valid)
+
+        return loss
+
+    @staticmethod
+    def _compute_masked_loss(unmasked_loss, mask):
+        assert len(unmasked_loss.shape) == len(mask.shape)
+        if len(unmasked_loss.shape) == 3:
+            dim = (1, 2)
+        else:
+            dim = (2, 3)
+        valid_num = torch.sum(mask, dim=dim)
+        masked_loss = torch.sum(unmasked_loss * mask, dim=dim)
+        masked_loss = masked_loss / (valid_num + 1)
+        loss = torch.mean(masked_loss)
+        return loss
+    
+class PointHeatmapSpatialFocalWeightedBCELoss(object):
+
+    def __init__(self, device, positive_weight=200, fn_scale=1.0, gamma=2, kernel_size=5, sigma=1.5):
+        self.device = device
+        self.gamma = gamma
+        self.positive_weight = positive_weight
+        self.fn_scale = fn_scale
+
+        # 生成固定权重的二维高斯卷积核
+        center = np.array((kernel_size // 2, kernel_size // 2), dtype=np.float32)
+        grid = np.zeros((kernel_size, kernel_size, 2), dtype=np.float32)
+        for i in range(kernel_size):
+            for j in range(kernel_size):
+                grid[i, j] = (i, j)  # y,x的顺序
+
+        kernel = np.exp(-np.linalg.norm(grid - center, axis=2, keepdims=False) / (2 * sigma ** 2))
+        kernel[int(kernel_size // 2), int(kernel_size // 2)] = 0  # 中心点的权重置为0
+
+        # 进行归一化
+        kernel = kernel / np.sum(kernel)
+        self.kernel = torch.from_numpy(kernel).unsqueeze(dim=0).unsqueeze(dim=0).to(
+            self.device)  # [1,1,ksize,ksize]的高斯卷积核
+        self.padding = int(kernel_size // 2)
+
+    def __call__(self, heatmap_pred, heatmap_gt, heatmap_valid, **kwargs):
+        heatmap_pred = torch.sigmoid(heatmap_pred)  # 将logit转换为概率
+
+        fp_heatmap = (heatmap_pred * (1. - heatmap_gt)).unsqueeze(dim=1)  # 所有非关键点被判断为关键点的概率->假正率
+        fn_heatmap = ((1. - heatmap_pred) * heatmap_gt).unsqueeze(dim=1)  # 所有关键点被判断为非关键点的概率->假错率
+
+        fp_weight = f.conv2d(fp_heatmap, self.kernel, padding=self.padding).squeeze()
+        fn_weight = f.conv2d(fn_heatmap, self.kernel, padding=self.padding).squeeze()
+
+        loss_positive = -self.positive_weight * (1. + fp_weight) ** self.gamma * torch.log(
+            heatmap_pred + 1e-5) * heatmap_gt
+        loss_negative = -(1. + self.fn_scale * fn_weight) ** self.gamma * torch.log(1 - heatmap_pred + 1e-5) * (1 - heatmap_gt)
+
+        loss_unmasked = loss_positive + loss_negative
+        loss = self._compute_masked_loss(loss_unmasked, heatmap_valid)
+
+        return loss
+
+    @staticmethod
+    def _compute_masked_loss(unmasked_loss, mask):
+        valid_num = torch.sum(mask, dim=(1, 2))
+        masked_loss = torch.sum(unmasked_loss * mask, dim=(1, 2))
+        masked_loss = masked_loss / (valid_num + 1)
+        loss = torch.mean(masked_loss)
+        return loss
 
 
+class PointHeatmapFocalLoss(object):
+
+    def __init__(self, gamma=2, p_ratio=0.75):
+        self.gamma = gamma
+        self.p_ratio = p_ratio
+        self.unmasked_loss = torch.nn.BCEWithLogitsLoss(reduction='none')
+
+    def __call__(self, heatmap_pred, heatmap_gt, mask):
+        """只适用one-hot的情况"""
+        sigmoid_0 = torch.sigmoid(heatmap_pred)  # 预测为关键点的概率
+        sigmoid_1 = 1. - sigmoid_0  # 预测为非关键点的概率
+
+        module_factor_0 = torch.pow(1.-sigmoid_0, self.gamma) * self.p_ratio * heatmap_gt
+        module_factor_1 = torch.pow(1.-sigmoid_1, self.gamma) * (1. - self.p_ratio) * (1 - heatmap_gt)
+        # module_factor = module_factor_0 + module_factor_1
+
+        unmasked_loss = -(module_factor_0*torch.log(sigmoid_0+1e-4)+module_factor_1*torch.log(sigmoid_1+1e-4))
+        # unmasked_loss = module_factor * self.unmasked_loss(heatmap_pred, heatmap_gt)
+
+        valid_num = torch.sum(mask, dim=(1, 2))
+        masked_loss = torch.sum(unmasked_loss * mask, dim=(1, 2))
+        # masked_loss = masked_loss / (valid_num + 1)
+        loss = torch.mean(masked_loss)
+        return loss
+
+
+class HeatmapAlignLoss(object):
+    """
+    用于计算两幅heatmap在其相关单应变换下的对齐loss
+    """
+    def __init__(self):
+        pass
+
+    def __call__(self, heatmap_s, heatmap_t, homography, mask, **kwargs):
+        """
+        将heatmap_s经单应变换插值到heatmap_t',计算heatmap_t'与heatmap_t在预先计算的mask中的有效区域的差异作为对齐loss
+        Args:
+            heatmap_s: [bt,1,h,w],s视角下预测的热力图
+            heatmap_t: [bt,1,h,w],t视角下预测的热力图
+            homography: s->t的单应变换
+            mask: 经上述变换后的有效区域的mask
+
+        Returns:
+            loss: 对齐差异作为loss返回
+
+        """
+        heatmap_s = torch.sigmoid(heatmap_s)
+        heatmap_t = torch.sigmoid(heatmap_t)
+
+        project_heatmap_t = interpolation(heatmap_s, homography)
+        unmasked_loss = torch.abs(project_heatmap_t-heatmap_t).squeeze()
+        loss = self._compute_masked_loss(unmasked_loss, mask)
+        return loss
+
+    @staticmethod
+    def _compute_masked_loss(unmasked_loss, mask):
+        valid_num = torch.sum(mask, dim=(1, 2))
+        masked_loss = torch.sum(unmasked_loss * mask, dim=(1, 2))
+        masked_loss = masked_loss / (valid_num + 1)
+        loss = torch.mean(masked_loss)
+        return loss
+
+
+class HeatmapWeightedAlignLoss(HeatmapAlignLoss):
+
+    def __init__(self, weight=200):
+        super(HeatmapWeightedAlignLoss, self).__init__()
+        self.weight = weight
+
+    def __call__(self, heatmap_s, heatmap_t, homography, mask, **kwargs):
+        heatmap_gt_t = kwargs["heatmap_gt_t"]
+
+        heatmap_s = torch.sigmoid(heatmap_s)
+        heatmap_t = torch.sigmoid(heatmap_t)
+
+        module_factor_keypoint = self.weight * heatmap_gt_t
+        module_factor_others = 1. * (1 - heatmap_gt_t)
+        module_factor = module_factor_keypoint + module_factor_others
+
+        project_heatmap_t = interpolation(heatmap_s, homography)
+        unmasked_loss = module_factor * torch.abs(project_heatmap_t-heatmap_t).squeeze()
+        loss = self._compute_masked_loss(unmasked_loss, mask)
+        return loss
+
+class Matcher(object):
+
+    def __init__(self, dtype='float'):
+        if dtype == 'float':
+            self.compute_desp_dist = self._compute_desp_dist
+        elif dtype == 'binary':
+            self.compute_desp_dist = self._compute_desp_dist_binary
+        else:
+            assert False
+
+    def __call__(self, point_0, desp_0, point_1, desp_1):
+        dist_0_1 = self.compute_desp_dist(desp_0, desp_1)  # [n,m]
+        dist_1_0 = dist_0_1.transpose((1, 0))  # [m,n]
+        nearest_idx_0_1 = np.argmin(dist_0_1, axis=1)  # [n]
+        nearest_idx_1_0 = np.argmin(dist_1_0, axis=1)  # [m]
+        matched_src = []
+        matched_tgt = []
+        for i, idx_0_1 in enumerate(nearest_idx_0_1):
+            if i == nearest_idx_1_0[idx_0_1]:
+                matched_src.append(point_0[i])
+                matched_tgt.append(point_1[idx_0_1])
+        if len(matched_src) <= 4:
+            print("There exist too little matches")
+            # assert False
+            return None
+        if len(matched_src) != 0:
+            matched_src = np.stack(matched_src, axis=0)
+            matched_tgt = np.stack(matched_tgt, axis=0)
+        return matched_src, matched_tgt
