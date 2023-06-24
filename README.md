@@ -17,7 +17,16 @@ pip install -r requirement.txt,
 # Quick start
 HPatches Image Matching Benchmark
 
-1.Download the trained model: https://drive.google.com/file/d/1qrvdd3KVYFl6EwH8s5IS5p_Hs26xIKRD/view?usp=sharing
+1.Download the trained model:
+
+AWDesc_CA:
+
+https://drive.google.com/file/d/1qrvdd3KVYFl6EwH8s5IS5p_Hs26xIKRD/view?usp=sharing
+
+AWDesc_Tiny:
+
+https://drive.google.com/drive/folders/1PGHiGojkE7qCp1T-l9JSn4aJ7gN0_ua6?usp=sharing
+
 and place it in the "ckpt/mtldesc".
 
 
