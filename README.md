@@ -51,6 +51,7 @@ run HPatches-Sequences-Matching-Benchmark.ipynb
 
 ## Training
 AWDesc-CA
+
 Download dataset: https://drive.google.com/file/d/1Uz0hVFPxWsE71V77kXZ973iY2GuXC20b/view?usp=sharing
 
 Set the dataset path in the configuration file configs/AWDesc_train.yaml
@@ -64,7 +65,8 @@ mega_despoint_dir:  /data/Mega_train/despoint #descriptor correspondence points
 python train.py --gpus 0 --configs configs/AWDesc_train.yaml --indicator awdesc_ca
 ```
 AWDesc-Tiny
+
 Download dataset:
 https://pan.baidu.com/s/1-1rpNxYsNl5fVRKB6EWo4A?pwd=elcb 
 
-extraction code：elcb 
+download code：elcb 
