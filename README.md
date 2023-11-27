@@ -55,7 +55,7 @@ AWDesc-CA
 
 Download dataset: https://drive.google.com/file/d/1Uz0hVFPxWsE71V77kXZ973iY2GuXC20b/view?usp=sharing
 
-Set the dataset path in the configuration file configs/AWDesc_train.yaml
+Set the dataset path in the configuration file configs/AWDesc_train_CA.yaml
 
 ```
 mega_image_dir:  /data/Mega_train/image   #images
@@ -65,12 +65,30 @@ mega_despoint_dir:  /data/Mega_train/despoint #descriptor correspondence points
 ```
 python train.py --gpus 0 --configs configs/AWDesc_train.yaml --indicator awdesc_ca
 ```
+
+SuperPoint
+
+Set the dataset path in the configuration file configs/SuperPoint_train.yaml
+
+```
+mega_image_dir:  /data/Mega_train/image   #images
+mega_keypoint_dir:  /data/Mega_train/keypoint #keypoints
+mega_despoint_dir:  /data/Mega_train/despoint #descriptor correspondence points
+```
+```
+python train.py --gpus 0 --configs configs/SuperPoint_train.yaml --indicator superpoint
+```
+
+
+
 AWDesc-Tiny
 
 Download dataset:
 https://pan.baidu.com/s/1-1rpNxYsNl5fVRKB6EWo4A?pwd=elcb 
 
 download code：elcb 
+
+Set the dataset path in the configuration file configs/AWDesc_train_Tiny.yaml
 ```
 mega_image_dir:  /data/Mega_train/image   #images
 mega_keypoint_dir:  /data/Mega_train/keypoint #keypoints
