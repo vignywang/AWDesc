@@ -78,5 +78,5 @@ mega_dl_dir1:  /data/Mega_train/dl_teacher0 #Knowledge extracted from teacher
 mega_dl_dir2:  /data/Mega_train/dl_teacher1 #Knowledge extracted from teacher
 ```
 ```
-python train.py --gpus 0 --configs configs/AWDesc_train_tiny.yaml --indicator awdesc_t16
+python train.py --gpus 0 --configs configs/AWDesc_train_Tiny.yaml --indicator awdesc_t16
 ```
