@@ -6,8 +6,8 @@ Unofficial Pytorch implementation of SuperPoint.
 
 To do：
 - [x] Evaluation code and Trained model for AWDesc
-- [ ] Training code and a more detailed readme (Coming soon)
-- [ ] Training code of SuperPoint 
+- [x] Training code 
+- [ ] Training code of SuperPoint and a more detailed readme (Coming soon)
 
 # Requirement
 ```
@@ -70,3 +70,13 @@ Download dataset:
 https://pan.baidu.com/s/1-1rpNxYsNl5fVRKB6EWo4A?pwd=elcb 
 
 download code：elcb 
+```
+mega_image_dir:  /data/Mega_train/image   #images
+mega_keypoint_dir:  /data/Mega_train/keypoint #keypoints
+mega_despoint_dir:  /data/Mega_train/despoint #descriptor correspondence points
+mega_dl_dir1:  /data/Mega_train/dl_teacher0 #Knowledge extracted from teacher
+mega_dl_dir2:  /data/Mega_train/dl_teacher1 #Knowledge extracted from teacher
+```
+```
+python train.py --gpus 0 --configs configs/AWDesc_train_tiny.yaml --indicator awdesc_t16
+```
