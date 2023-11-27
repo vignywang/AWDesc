@@ -2,7 +2,7 @@ name: superpoint
 trainer: superpoint_trainer.SuperPoint
 
 model:
-    backbone: network.MTLDesc
+    backbone: network.SuperPointNet
 
 train:
     adjust_lr: true
