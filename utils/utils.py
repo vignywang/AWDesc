@@ -9,6 +9,212 @@ import numpy as np
 import torch
 import torch.nn.functional as f
 
+class PointHeatmapSigmodMSELoss(object):
+
+    def __init__(self):
+        self.unmasked_mse = torch.nn.L1Loss()
+
+    def __call__(self, heatmap_pred, heatmap_gt, mask):
+        """
+        用heatmap计算关键点的loss
+        """
+        heatmap_pred = torch.sigmoid(heatmap_pred)  # 预测为关键点的概率
+        heatmap_gt=torch.sigmoid(heatmap_gt)
+        unmasked_loss = self.unmasked_mse(heatmap_pred, heatmap_gt)
+        valid_num = torch.sum(mask, dim=(1, 2))
+        masked_loss = torch.sum(unmasked_loss * mask, dim=(1, 2))
+        masked_loss = masked_loss / (valid_num + 1)
+        loss = torch.mean(masked_loss)
+        return loss
+
+class Similarity(torch.nn.Module):
+    """Similarity-Preserving Knowledge Distillation, ICCV2019, verified by original author"""
+    def __init__(self):
+        super(Similarity, self).__init__()
+
+    def forward(self, g_s, g_t):
+        return [self.similarity_loss(f_s, f_t) for f_s, f_t in zip(g_s, g_t)]
+
+    def similarity_loss(self, f_s, f_t):
+        bsz = f_s.shape[0]
+        f_s = f_s.view(bsz, -1)
+        f_t = f_t.view(bsz, -1)
+
+        G_s = torch.mm(f_s, torch.t(f_s))
+        # G_s = G_s / G_s.norm(2)
+        G_s = torch.nn.functional.normalize(G_s)
+        G_t = torch.mm(f_t, torch.t(f_t))
+        # G_t = G_t / G_t.norm(2)
+        G_t = torch.nn.functional.normalize(G_t)
+
+        G_diff = G_t - G_s
+        loss = (G_diff * G_diff).view(-1, 1).sum(0) / (bsz)
+
+        return loss
+
+class Cosine_Loss(object):
+    """
+    专用于升级版的描述子提取网络的训练loss
+    """
+
+    def __init__(self, device):
+        self.device = device
+
+    def __call__(self, desp_0, desp_1):
+        """
+        Args:
+            desp_0: [bt,n,dim]
+            desp_1: [bt,n,dim]
+            valid_mask: [bt,n] 1有效，0无效
+            not_search_mask: [bt,n,n]
+        Returns:
+            loss
+        """
+
+        desp_0t = desp_0.transpose(1, 2)  # [bt,dim,n]
+        desp_1t = desp_1.transpose(1, 2)  # [bt,dim,n]
+        cos_similarity1 = torch.matmul(desp_0, desp_0t)  # [bt,n,n]
+        cos_similarity2 = torch.matmul(desp_1, desp_1t)  # [bt,n,n]
+        #print(cos_similarity1)
+        #print(cos_similarity2)
+        #exit(0)
+        #dist = torch.sqrt(2.*(1.-cos_similarity)+1e-4)
+        dist=f.l1_loss(cos_similarity1,cos_similarity2)
+        loss = torch.mean(dist)
+        #print(loss.shape)
+        #print(loss)
+        #exit(0)
+
+        # not_search_mask = torch.eye(n, n, dtype=torch.float, device=self.device)
+        #positive_pair = torch.diagonal(dist, dim1=1, dim2=2)  # [bt,n]
+        #dist = dist + 10*not_search_mask
+
+        #hardest_negative_pair, hardest_negative_idx = torch.min(dist, dim=2)  # [bt,n]
+
+        # zeros = torch.zeros_like(positive_pair)
+        # loss_total, _ = torch.max(torch.stack((zeros, 1.+positive_pair-hardest_negative_pair), dim=1), dim=1)
+        #loss_total = torch.relu(1.+positive_pair-hardest_negative_pair)
+        #loss_total *= valid_mask
+
+        #valid_num = torch.sum(valid_mask, dim=1)
+        #loss = torch.mean(torch.sum(loss_total, dim=1)/(valid_num + 1.))
+
+        return loss
+
+class IMLoss(torch.nn.Module):
+
+    def __init__(self, reduction='mean', loss_weight=1.0):
+        super().__init__()
+        self.reduction = reduction
+        self.loss_weight = loss_weight
+
+    def forward(self,
+                x,
+                soft_target,
+                weight=None,
+                avg_factor=None,
+                reduction_override=None):
+        assert reduction_override in (None, 'none', 'mean', 'sum')
+
+        reduction = (
+            reduction_override if reduction_override else self.reduction)
+        loss_im = self.loss_weight * im_loss(
+            x, soft_target)
+
+        return loss_im
+
+class L1_loss(object):
+
+    def __init__(self, device,T):
+        self.device = device
+        self.T=T
+        self.unmasked_mse = torch.nn.L1Loss()
+
+
+    def __call__(self, desp_0, desp_1,w_0,w_1):
+        """
+        Args:
+            desp_0: [bt,n,dim]
+            desp_1: [bt,n,dim]
+            valid_mask: [bt,n] 1有效，0无效
+            not_search_mask: [bt,n,n]
+        Returns:
+            loss
+        """
+        desp_0=desp_0*w_0
+        desp_1=desp_1*w_1
+        #print(desp_0.shape)
+        loss=self.unmasked_mse(desp_0,desp_1)
+        #loss = torch.mean(torch.sum(loss, dim=(1, 2)))
+        #print(loss)
+        #exit(0)
+
+        return loss
+
+class Dis_loss(object):
+
+    def __init__(self, device,T):
+        self.device = device
+        self.T=T
+        self.unmasked_mse = torch.nn.L1Loss()
+
+
+    def __call__(self, desp_0, desp_1,w_0,w_1):
+        """
+        Args:
+            desp_0: [bt,n,dim]
+            desp_1: [bt,n,dim]
+            valid_mask: [bt,n] 1有效，0无效
+            not_search_mask: [bt,n,n]
+        Returns:
+            loss
+        """
+        desp_0=desp_0*w_0
+        desp_1=desp_1*w_1
+
+        loss=self.unmasked_mse(desp_0,desp_1)
+
+
+        return loss
+class DescriptorGeneralTripletLoss(object):
+    """
+    专用于升级版的描述子提取网络的训练loss
+    """
+
+    def __init__(self, device):
+        self.device = device
+
+    def __call__(self, desp_0, desp_1, valid_mask, not_search_mask):
+        """
+        Args:
+            desp_0: [bt,n,dim]
+            desp_1: [bt,n,dim]
+            valid_mask: [bt,n] 1有效，0无效
+            not_search_mask: [bt,n,n]
+        Returns:
+            loss
+        """
+
+        desp_1 = desp_1.transpose(1, 2)  # [bt,dim,n]
+
+        cos_similarity = torch.matmul(desp_0, desp_1)  # [bt,n,n]
+        dist = torch.sqrt(2.*(1.-cos_similarity)+1e-4)
+
+        # not_search_mask = torch.eye(n, n, dtype=torch.float, device=self.device)
+        positive_pair = torch.diagonal(dist, dim1=1, dim2=2)  # [bt,n]
+        dist = dist + 10*not_search_mask
+
+        hardest_negative_pair, hardest_negative_idx = torch.min(dist, dim=2)  # [bt,n]
+
+        # zeros = torch.zeros_like(positive_pair)
+        # loss_total, _ = torch.max(torch.stack((zeros, 1.+positive_pair-hardest_negative_pair), dim=1), dim=1)
+        loss_total = torch.relu(1.+positive_pair-hardest_negative_pair)
+        loss_total *= valid_mask
+
+        valid_num = torch.sum(valid_mask, dim=1)
+        loss = torch.mean(torch.sum(loss_total, dim=1)/(valid_num + 1.))
+
+        return loss
 
 def generate_testing_file(folder, prefix="model"):
     models = glob(os.path.join(folder, prefix + "_*.pt"))
@@ -635,6 +841,37 @@ class BinaryDescriptorTripletTanhLoss(object):
 
         return triplet_loss
 
+class PointHeatmapMSELoss(object):
+
+    def __init__(self):
+        self.unmasked_mse = torch.nn.MSELoss(reduction="none")
+
+    def __call__(self, heatmap_pred, heatmap_gt, mask):
+        """
+        用heatmap计算关键点的loss
+        """
+        unmasked_loss = self.unmasked_mse(heatmap_pred, heatmap_gt)
+        valid_num = torch.sum(mask, dim=(1, 2))
+        masked_loss = torch.sum(unmasked_loss * mask, dim=(1, 2))
+        masked_loss = masked_loss / (valid_num + 1)
+        loss = torch.mean(masked_loss)
+        return loss
+
+class PointHeatmapL1Loss(object):
+
+    def __init__(self):
+        self.unmasked_mse = torch.nn.L1Loss()
+
+    def __call__(self, heatmap_pred, heatmap_gt, mask):
+        """
+        用heatmap计算关键点的loss
+        """
+        unmasked_loss = self.unmasked_mse(heatmap_pred, heatmap_gt)
+        valid_num = torch.sum(mask, dim=(1, 2))
+        masked_loss = torch.sum(unmasked_loss * mask, dim=(1, 2))
+        masked_loss = masked_loss / (valid_num + 1)
+        loss = torch.mean(masked_loss)
+        return loss
 
 class BinaryDescriptorTripletTanhSigmoidLoss(object):
 
