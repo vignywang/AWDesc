@@ -24,7 +24,6 @@ train:
     height: 400
     width: 400
 
-    T: 15
     fix_grid_option: 400
     fix_sample: false
     rotation_option: none
