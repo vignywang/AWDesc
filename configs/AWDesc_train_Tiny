@@ -1,0 +1,36 @@
+name: t16 # or t32
+trainer: awdesc_trainer.AWDescTrainer
+
+model:
+    backbone: network.Lite16 # or network.Lite32
+
+train:
+    adjust_lr: true
+    lr: 0.001
+    weight_decay: 0.0001
+    lr_mod: LambdaLR
+    batch_size: 12
+    epoch_num: 30
+    maintain_epoch: 0
+    decay_epoch: 30
+    log_freq: 100
+    num_workers: 16
+    validate_after: 1000
+
+    dataset: megadepth_train_dataset_dl.MegaDepthTrainDataset
+    mega_image_dir: /data/Mega_train/image
+    mega_keypoint_dir: /data/Mega_train/keypoint
+    mega_despoint_dir: /data/Mega_train/despoint
+    mega_dl_dir1: /data/Mega_train/Mega_train/dl_teacher0
+    mega_dl_dir2: /data/Mega_train/Mega_train/dl_teacher1 
+    height: 400
+    width: 400
+    balance: 0.5 
+    T: 15
+    fix_grid_option: 400
+    fix_sample: false
+    rotation_option: none
+    do_augmentation: true
+    sydesp_type: nomal # random
+    point_loss_weight: 200
+    w_weight: 0.1
