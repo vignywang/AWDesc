@@ -7,7 +7,8 @@ Unofficial Pytorch implementation of SuperPoint.
 To do：
 - [x] Evaluation code and Trained model for AWDesc
 - [x] Training code 
-- [ ] Training code of SuperPoint and a more detailed readme (Coming soon)
+- [x] Training code of SuperPoint
+- [ ] More detailed readme (Coming soon)
 
 # Requirement
 ```
